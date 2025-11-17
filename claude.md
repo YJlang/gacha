@@ -1090,3 +1090,532 @@ java -jar target/gacha-travel-service-0.0.1-SNAPSHOT.jar
 프로젝트의 데이터베이스 구조는 `ERD.dbml` 파일을 참고하세요.
 [dbdiagram.io](https://dbdiagram.io)에서 시각적으로 확인할 수 있습니다.
 
+---
+
+## 🎯 프로젝트 구현 현황 (2025-11-17 기준)
+
+### ✅ 완료된 Phase (Phase 1~4)
+
+#### **Phase 1: 의존성 설정 및 공통 인프라** ✅
+**완료 항목:**
+- ✅ `build.gradle` 의존성 추가 (Web, JPA, Validation, Cache, JWT, CSV)
+- ✅ `application.properties` 설정 (MySQL, JPA, JWT, CSV 경로)
+- ✅ 패키지 구조 생성 (domain, dto, controller, service, repository, config, util, exception)
+- ✅ `ApiResponse<T>` - 통일된 API 응답 형식
+- ✅ `ErrorCode` enum - 에러 코드 관리
+- ✅ `BusinessException` - 비즈니스 예외
+- ✅ `GlobalExceptionHandler` - 전역 예외 처리 (@ControllerAdvice)
+- ✅ `JwtUtil` - JWT 토큰 생성/검증 유틸리티
+- ✅ `PasswordUtil` - SHA-256 비밀번호 암호화
+- ✅ `CacheConfig` - Spring Cache 설정 (villages 캐시)
+
+**파일 위치:**
+- `src/main/java/com/example/gacha/dto/response/ApiResponse.java`
+- `src/main/java/com/example/gacha/exception/ErrorCode.java`
+- `src/main/java/com/example/gacha/exception/BusinessException.java`
+- `src/main/java/com/example/gacha/exception/GlobalExceptionHandler.java`
+- `src/main/java/com/example/gacha/util/JwtUtil.java`
+- `src/main/java/com/example/gacha/util/PasswordUtil.java`
+- `src/main/java/com/example/gacha/config/CacheConfig.java`
+
+---
+
+#### **Phase 2: CSV 데이터 처리** ✅
+**완료 항목:**
+- ✅ `VillageDto` - CSV 데이터를 담는 DTO (villageId, villageName, sidoName, sigunguName, address, phoneNumber, latitude, longitude, programName, programContent)
+- ✅ `VillageCsvReader` - CSV 파일 읽기 및 캐싱 (`@Cacheable`)
+  - BOM 제거 처리
+  - 필터링 기능 (지역, 프로그램 유형)
+  - EUC-KR 인코딩 설정
+- ✅ `VillageService` - 비즈니스 로직
+  - 전체/필터링 조회 (페이지네이션)
+  - ID로 조회
+  - 랜덤 선택 (가챠용 핵심 로직)
+- ✅ CSV 파일 준비 (`src/main/resources/data/전국농어촌체험휴양마을표준데이터.csv`, 506KB, EUC-KR)
+
+**파일 위치:**
+- `src/main/java/com/example/gacha/domain/village/VillageDto.java`
+- `src/main/java/com/example/gacha/domain/village/VillageCsvReader.java`
+- `src/main/java/com/example/gacha/domain/village/VillageService.java`
+
+**중요 설정:**
+```properties
+csv.file.path=classpath:data/전국농어촌체험휴양마을표준데이터.csv
+csv.file.encoding=EUC-KR
+```
+
+---
+
+#### **Phase 3: 인증 시스템** ✅
+**완료 항목:**
+- ✅ `User` Entity (userId, username, password, email, createdAt)
+- ✅ `UserRepository` (findByUsername, existsByUsername, existsByEmail)
+- ✅ `SignupRequest` - 회원가입 요청 DTO (Validation 포함)
+- ✅ `LoginRequest` - 로그인 요청 DTO
+- ✅ `AuthResponse` - 인증 응답 DTO (토큰 + 사용자 정보)
+- ✅ `AuthService` - 회원가입, 로그인, 토큰 검증 비즈니스 로직
+- ✅ `AuthController` - 인증 API 엔드포인트
+  - ✅ `POST /api/auth/signup` - 회원가입
+  - ✅ `POST /api/auth/login` - 로그인
+
+**파일 위치:**
+- `src/main/java/com/example/gacha/domain/user/User.java`
+- `src/main/java/com/example/gacha/domain/user/UserRepository.java`
+- `src/main/java/com/example/gacha/dto/request/SignupRequest.java`
+- `src/main/java/com/example/gacha/dto/request/LoginRequest.java`
+- `src/main/java/com/example/gacha/dto/response/AuthResponse.java`
+- `src/main/java/com/example/gacha/service/AuthService.java`
+- `src/main/java/com/example/gacha/controller/AuthController.java`
+
+---
+
+#### **Phase 4: 가챠 시스템** ✅ (프로젝트 핵심!)
+**완료 항목:**
+- ✅ `GachaHistory` Entity (gachaId, userId, villageId, drawnAt)
+  - 인덱스: `idx_user_drawn_at`, `idx_user_id`
+- ✅ `GachaHistoryRepository`
+  - `countByUserIdAndDrawnAtAfter()` - 하루 1회 제한 확인용
+  - `findByUserIdAndDrawnAtAfterOrderByDrawnAtDesc()` - 오늘 이력 조회
+- ✅ `GachaDrawRequest` - 가챠 요청 DTO (region, programType 필터)
+- ✅ `VillageResponse` - 여행지 응답 DTO (isNew, drawnAt 포함)
+- ✅ `GachaStatusResponse` - 가챠 상태 응답 DTO (canDraw, remainingCount, lastDrawTime, todayDrawCount)
+- ✅ `GachaService` - 가챠 핵심 비즈니스 로직
+  - **drawGacha()**: 하루 1회 제한 확인, 랜덤 여행지 선택, 가챠 이력 저장, 처음 뽑은 여행지인지 확인
+  - **getGachaStatus()**: 오늘 가챠 가능 여부 확인
+- ✅ `GachaController` - 가챠 API 엔드포인트
+  - ✅ `POST /api/gacha/draw` - 가챠 뽑기 (JWT 인증, 필터링 옵션)
+  - ✅ `GET /api/gacha/status` - 가챠 상태 확인
+
+**파일 위치:**
+- `src/main/java/com/example/gacha/domain/gacha/GachaHistory.java`
+- `src/main/java/com/example/gacha/domain/gacha/GachaHistoryRepository.java`
+- `src/main/java/com/example/gacha/dto/request/GachaDrawRequest.java`
+- `src/main/java/com/example/gacha/dto/response/VillageResponse.java`
+- `src/main/java/com/example/gacha/dto/response/GachaStatusResponse.java`
+- `src/main/java/com/example/gacha/service/GachaService.java`
+- `src/main/java/com/example/gacha/controller/GachaController.java`
+
+**핵심 로직:**
+```java
+// 하루 1회 제한 확인
+LocalDateTime todayStart = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+long todayCount = gachaHistoryRepository.countByUserIdAndDrawnAtAfter(userId, todayStart);
+if (todayCount >= 1) {
+    throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
+}
+```
+
+---
+
+### 📋 API 구현 현황 (20개 중 4개 완료)
+
+#### ✅ 완료된 API (4개)
+1. ✅ `POST /api/auth/signup` - 회원가입
+2. ✅ `POST /api/auth/login` - 로그인 (JWT 토큰 발급)
+3. ✅ `POST /api/gacha/draw` - 가챠 뽑기 (하루 1회 제한) ⭐
+4. ✅ `GET /api/gacha/status` - 가챠 상태 확인
+
+#### 🔲 미완료 API (16개) - Phase 5~6에서 구현 예정
+
+**여행지 API (2개) - Phase 6**
+- 🔲 `GET /api/villages/{villageId}` - 여행지 상세 조회
+- 🔲 `GET /api/villages` - 여행지 목록 조회 (페이지네이션, 필터링)
+
+**컬렉션 API (4개) - Phase 5**
+- 🔲 `GET /api/collections` - 내 컬렉션 조회
+- 🔲 `POST /api/collections` - 여행지 컬렉션에 추가
+- 🔲 `DELETE /api/collections/{collectionId}` - 컬렉션에서 제거
+- 🔲 `GET /api/collections/stats` - 컬렉션 통계 (지역별 집계)
+
+**추억 API (5개) - Phase 5**
+- 🔲 `GET /api/memories` - 내 추억 목록 조회
+- 🔲 `POST /api/memories` - 추억 작성
+- 🔲 `GET /api/memories/{memoryId}` - 추억 상세 조회
+- 🔲 `PUT /api/memories/{memoryId}` - 추억 수정
+- 🔲 `DELETE /api/memories/{memoryId}` - 추억 삭제
+
+**마이페이지 API (2개) - Phase 6**
+- 🔲 `GET /api/users/me` - 내 정보 조회 (컬렉션 수, 추억 수 통계 포함)
+- 🔲 `PUT /api/users/me` - 내 정보 수정
+
+---
+
+### 🚀 다음 단계: Phase 5 - 컬렉션 & 추억 구현
+
+#### Phase 5-1: 컬렉션 시스템
+**구현할 내용:**
+1. **Collection Entity** 생성
+   - `collectionId` (PK)
+   - `userId` (FK)
+   - `villageId` (CSV ID 참조, 외래키 제약 없음)
+   - `collectedAt` (수집 일시)
+   - **UNIQUE 제약**: `(user_id, village_id)` - 중복 방지
+
+2. **CollectionRepository** 생성
+   - `findByUserIdOrderByCollectedAtDesc()` - 사용자의 컬렉션 조회
+   - `existsByUserIdAndVillageId()` - 중복 확인
+   - `deleteByCollectionIdAndUserId()` - 권한 확인 후 삭제
+   - `countByUserId()` - 사용자의 총 컬렉션 개수
+
+3. **CollectionRequest** DTO
+   - `villageId` (필수)
+
+4. **CollectionResponse** DTO
+   - `collectionId`, `villageId`, `villageName`, `sidoName`, `sigunguName`, `address`, `collectedAt`
+   - VillageDto와 조합하여 응답
+
+5. **CollectionStatsResponse** DTO
+   - `totalCount` - 전체 컬렉션 개수
+   - `regionStats` - Map<String, Long> 지역별 통계 (예: {"경상남도": 5, "전라북도": 3})
+
+6. **CollectionService** 비즈니스 로직
+   - `addCollection()` - 컬렉션 추가 (중복 체크)
+   - `getMyCollections()` - 내 컬렉션 조회 (페이지네이션)
+   - `removeCollection()` - 컬렉션 제거 (권한 확인)
+   - `getCollectionStats()` - 지역별 통계 계산
+
+7. **CollectionController** API
+   - `POST /api/collections` - 컬렉션 추가
+   - `GET /api/collections` - 내 컬렉션 조회
+   - `DELETE /api/collections/{collectionId}` - 컬렉션 제거
+   - `GET /api/collections/stats` - 통계 조회
+
+**파일 생성 위치:**
+```
+src/main/java/com/example/gacha/
+├── domain/collection/
+│   ├── Collection.java (Entity)
+│   ├── CollectionRepository.java
+│   └── CollectionService.java
+├── dto/request/
+│   └── CollectionRequest.java
+├── dto/response/
+│   ├── CollectionResponse.java
+│   └── CollectionStatsResponse.java
+└── controller/
+    └── CollectionController.java
+```
+
+**ERD 참고:**
+```sql
+CREATE TABLE collections (
+    collection_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    village_id BIGINT NOT NULL,
+    collected_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_village (user_id, village_id)
+);
+```
+
+---
+
+#### Phase 5-2: 추억 시스템
+**구현할 내용:**
+1. **Memory Entity** 생성
+   - `memoryId` (PK)
+   - `userId` (FK)
+   - `villageId` (CSV ID 참조)
+   - `content` (TEXT, 최대 1000자)
+   - `visitDate` (방문 날짜, 선택사항)
+   - `createdAt`, `updatedAt`
+
+2. **MemoryRepository** 생성
+   - `findByUserIdOrderByCreatedAtDesc()` - 사용자의 추억 목록
+   - `findByMemoryIdAndUserId()` - 권한 확인용
+   - `countByUserId()` - 사용자의 총 추억 개수
+
+3. **MemoryRequest** DTO (작성/수정용)
+   - `villageId` (필수, 작성 시에만)
+   - `content` (필수, 1~1000자)
+   - `visitDate` (선택, YYYY-MM-DD 형식)
+
+4. **MemoryResponse** DTO
+   - `memoryId`, `villageId`, `villageName`, `sidoName`, `sigunguName`, `address`, `content`, `visitDate`, `createdAt`, `updatedAt`
+
+5. **MemoryService** 비즈니스 로직
+   - `createMemory()` - 추억 작성 (villageId 유효성 검증)
+   - `getMyMemories()` - 내 추억 목록 (페이지네이션)
+   - `getMemoryById()` - 추억 상세 조회 (권한 확인)
+   - `updateMemory()` - 추억 수정 (권한 확인)
+   - `deleteMemory()` - 추억 삭제 (권한 확인)
+
+6. **MemoryController** API
+   - `POST /api/memories` - 추억 작성
+   - `GET /api/memories` - 내 추억 목록
+   - `GET /api/memories/{memoryId}` - 추억 상세
+   - `PUT /api/memories/{memoryId}` - 추억 수정
+   - `DELETE /api/memories/{memoryId}` - 추억 삭제
+
+**파일 생성 위치:**
+```
+src/main/java/com/example/gacha/
+├── domain/memory/
+│   ├── Memory.java (Entity)
+│   ├── MemoryRepository.java
+│   └── MemoryService.java
+├── dto/request/
+│   └── MemoryRequest.java
+├── dto/response/
+│   └── MemoryResponse.java
+└── controller/
+    └── MemoryController.java
+```
+
+**ERD 참고:**
+```sql
+CREATE TABLE memories (
+    memory_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    village_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    visit_date DATE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+```
+
+---
+
+### 🎯 Phase 6 - 마이페이지 & 여행지 API 구현
+
+#### Phase 6-1: 여행지 API
+**구현할 내용:**
+1. **VillageController** 생성
+   - `GET /api/villages/{villageId}` - 여행지 상세 조회
+     - VillageService의 `getVillageById()` 활용
+     - 컬렉션 여부 (isCollected) 포함
+   - `GET /api/villages` - 여행지 목록 조회
+     - 페이지네이션 (`page`, `size`)
+     - 필터링 (`region`, `programType`)
+     - VillageService의 `getAllVillages()` 활용
+
+**파일 생성 위치:**
+```
+src/main/java/com/example/gacha/controller/
+└── VillageController.java
+```
+
+---
+
+#### Phase 6-2: 마이페이지 API
+**구현할 내용:**
+1. **UserResponse** DTO (마이페이지용)
+   - `userId`, `username`, `email`, `createdAt`
+   - `collectionCount` - 컬렉션 개수
+   - `memoryCount` - 추억 개수
+
+2. **UserUpdateRequest** DTO
+   - `email` (선택, 이메일 형식 검증)
+
+3. **UserService** 생성
+   - `getMyInfo()` - 내 정보 조회 (통계 포함)
+   - `updateMyInfo()` - 내 정보 수정
+
+4. **UserController** 생성
+   - `GET /api/users/me` - 내 정보 조회
+   - `PUT /api/users/me` - 내 정보 수정
+
+**파일 생성 위치:**
+```
+src/main/java/com/example/gacha/
+├── dto/request/
+│   └── UserUpdateRequest.java
+├── dto/response/
+│   └── UserResponse.java
+├── service/
+│   └── UserService.java
+└── controller/
+    └── UserController.java
+```
+
+---
+
+### 🔧 구현 시 주의사항
+
+#### 공통 규칙
+1. **Entity 클래스**
+   - `@Entity`, `@Table`, `@Getter`, `@Setter`, `@NoArgsConstructor`, `@AllArgsConstructor`, `@Builder` 사용
+   - `@CreationTimestamp`, `@UpdateTimestamp` 활용
+   - `@Id`, `@GeneratedValue(strategy = GenerationType.IDENTITY)`
+
+2. **Repository**
+   - `JpaRepository<Entity, ID>` 상속
+   - 메서드 네이밍 규칙 준수 (findBy, existsBy, countBy 등)
+
+3. **Service**
+   - `@Service`, `@RequiredArgsConstructor`, `@Transactional(readOnly = true)`
+   - 쓰기 메서드에만 `@Transactional` 추가
+   - `BusinessException`으로 예외 처리
+
+4. **Controller**
+   - `@RestController`, `@RequestMapping("/api/...")`
+   - JWT 인증: `@RequestHeader("Authorization") String authorization`
+   - 모든 응답은 `ApiResponse<T>`로 래핑
+
+#### 권한 확인
+- 컬렉션 삭제: `collectionId` + `userId` 확인
+- 추억 조회/수정/삭제: `memoryId` + `userId` 확인
+- 권한 없으면 `ErrorCode.FORBIDDEN` 발생
+
+#### villageId 검증
+- 컬렉션 추가/추억 작성 시 `villageService.getVillageById(villageId)` 호출하여 존재 여부 확인
+- 존재하지 않으면 `ErrorCode.VILLAGE_NOT_FOUND` 발생
+
+---
+
+### 📦 최종 프로젝트 구조 (Phase 6 완료 후)
+
+```
+src/main/java/com/example/gacha/
+├── GachaApplication.java
+├── config/
+│   └── CacheConfig.java ✅
+├── domain/
+│   ├── user/
+│   │   ├── User.java ✅
+│   │   └── UserRepository.java ✅
+│   ├── village/
+│   │   ├── VillageDto.java ✅
+│   │   ├── VillageCsvReader.java ✅
+│   │   └── VillageService.java ✅
+│   ├── gacha/
+│   │   ├── GachaHistory.java ✅
+│   │   └── GachaHistoryRepository.java ✅
+│   ├── collection/
+│   │   ├── Collection.java 🔲
+│   │   └── CollectionRepository.java 🔲
+│   └── memory/
+│       ├── Memory.java 🔲
+│       └── MemoryRepository.java 🔲
+├── dto/
+│   ├── request/
+│   │   ├── SignupRequest.java ✅
+│   │   ├── LoginRequest.java ✅
+│   │   ├── GachaDrawRequest.java ✅
+│   │   ├── CollectionRequest.java 🔲
+│   │   ├── MemoryRequest.java 🔲
+│   │   └── UserUpdateRequest.java 🔲
+│   └── response/
+│       ├── ApiResponse.java ✅
+│       ├── AuthResponse.java ✅
+│       ├── VillageResponse.java ✅
+│       ├── GachaStatusResponse.java ✅
+│       ├── CollectionResponse.java 🔲
+│       ├── CollectionStatsResponse.java 🔲
+│       ├── MemoryResponse.java 🔲
+│       └── UserResponse.java 🔲
+├── service/
+│   ├── AuthService.java ✅
+│   ├── GachaService.java ✅
+│   ├── CollectionService.java 🔲
+│   ├── MemoryService.java 🔲
+│   └── UserService.java 🔲
+├── controller/
+│   ├── AuthController.java ✅
+│   ├── GachaController.java ✅
+│   ├── VillageController.java 🔲
+│   ├── CollectionController.java 🔲
+│   ├── MemoryController.java 🔲
+│   └── UserController.java 🔲
+├── util/
+│   ├── JwtUtil.java ✅
+│   └── PasswordUtil.java ✅
+└── exception/
+    ├── ErrorCode.java ✅
+    ├── BusinessException.java ✅
+    └── GlobalExceptionHandler.java ✅
+```
+
+---
+
+### 🧪 테스트 시나리오 (Phase 6 완료 후)
+
+#### 전체 플로우 테스트
+1. **회원가입** → `POST /api/auth/signup`
+2. **로그인** → `POST /api/auth/login` (토큰 획득)
+3. **가챠 뽑기** → `POST /api/gacha/draw` (랜덤 여행지 획득)
+4. **컬렉션 추가** → `POST /api/collections`
+5. **가챠 상태 확인** → `GET /api/gacha/status` (canDraw: false)
+6. **내 컬렉션 조회** → `GET /api/collections`
+7. **여행지 상세 조회** → `GET /api/villages/{villageId}`
+8. **추억 작성** → `POST /api/memories`
+9. **내 추억 조회** → `GET /api/memories`
+10. **마이페이지** → `GET /api/users/me` (통계 확인)
+11. **컬렉션 통계** → `GET /api/collections/stats` (지역별 통계)
+12. **추억 수정** → `PUT /api/memories/{memoryId}`
+13. **추억 삭제** → `DELETE /api/memories/{memoryId}`
+14. **컬렉션 제거** → `DELETE /api/collections/{collectionId}`
+
+---
+
+### 💡 개발 팁
+
+#### JWT 토큰 사용법
+```java
+// Controller에서 토큰 추출 및 사용자 ID 획득
+String token = jwtUtil.extractToken(authorization);
+Long userId = jwtUtil.getUserIdFromToken(token);
+```
+
+#### 페이지네이션 처리
+```java
+// Controller에서 Pageable 받기
+@GetMapping
+public ApiResponse<Page<CollectionResponse>> getMyCollections(
+    @RequestHeader("Authorization") String authorization,
+    @RequestParam(defaultValue = "0") int page,
+    @RequestParam(defaultValue = "20") int size
+) {
+    Pageable pageable = PageRequest.of(page, size);
+    // ...
+}
+```
+
+#### VillageDto와 Response DTO 조합
+```java
+// Service에서 VillageDto를 가져와서 Response DTO에 매핑
+VillageDto village = villageService.getVillageById(villageId);
+CollectionResponse response = CollectionResponse.builder()
+    .collectionId(collection.getCollectionId())
+    .villageId(village.getVillageId())
+    .villageName(village.getVillageName())
+    .sidoName(village.getSidoName())
+    .collectedAt(collection.getCollectedAt())
+    .build();
+```
+
+---
+
+### 📊 진행률 요약
+
+| Phase | 진행률 | 완료 항목 | 미완료 항목 |
+|-------|--------|----------|-----------|
+| Phase 1 | 100% | 공통 인프라 10개 | - |
+| Phase 2 | 100% | CSV 처리 3개 | - |
+| Phase 3 | 100% | 인증 7개 | - |
+| Phase 4 | 100% | 가챠 7개 | - |
+| **Phase 5** | **0%** | - | 컬렉션 7개 + 추억 6개 |
+| **Phase 6** | **0%** | - | 여행지 1개 + 마이페이지 4개 |
+| **전체** | **60%** | **27개** | **18개** |
+
+**API 완성도:** 4/20 (20%)
+
+---
+
+### 🎖️ 핵심 성과
+
+1. ✅ **가챠 시스템 완성** - 프로젝트의 핵심 기능!
+2. ✅ **하루 1회 제한** - `LocalDateTime` 기반 정확한 제한
+3. ✅ **CSV 기반 데이터** - 공공데이터 활용, 캐싱으로 성능 최적화
+4. ✅ **JWT 인증** - 간단하지만 효과적인 토큰 기반 인증
+5. ✅ **통일된 응답 형식** - `ApiResponse<T>`로 일관성 유지
+6. ✅ **전역 예외 처리** - `@ControllerAdvice`로 깔끔한 에러 핸들링
+
+---
+
+**다음 개발자를 위한 메시지:**
+Phase 5부터 시작하세요! Collection과 Memory 시스템을 구현하면 됩니다.
+위의 상세한 가이드를 따라 진행하면 됩니다. 화이팅! 💪
+
