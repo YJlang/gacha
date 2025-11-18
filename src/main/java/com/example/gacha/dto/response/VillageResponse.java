@@ -85,4 +85,23 @@ public class VillageResponse {
                 .drawnAt(drawnAt)
                 .build();
     }
+
+    /**
+     * VillageDto로부터 VillageResponse 생성 (여행지 상세 조회용 - 컬렉션 여부 포함)
+     */
+    public static VillageResponse from(VillageDto village, boolean isCollected) {
+        return VillageResponse.builder()
+                .villageId(village.getVillageId())
+                .villageName(village.getVillageName())
+                .sidoName(village.getSidoName())
+                .sigunguName(village.getSigunguName())
+                .address(village.getAddress())
+                .phoneNumber(village.getPhoneNumber())
+                .latitude(village.getLatitude())
+                .longitude(village.getLongitude())
+                .programName(village.getProgramName())
+                .programContent(village.getProgramContent())
+                .isCollected(isCollected)
+                .build();
+    }
 }

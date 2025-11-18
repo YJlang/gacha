@@ -1092,9 +1092,9 @@ java -jar target/gacha-travel-service-0.0.1-SNAPSHOT.jar
 
 ---
 
-## 🎯 프로젝트 구현 현황 (2025-11-17 기준)
+## 🎯 프로젝트 구현 현황 (2025-11-18 기준)
 
-### ✅ 완료된 Phase (Phase 1~4)
+### ✅ 완료된 Phase (Phase 1~6) - 전체 완료!
 
 #### **Phase 1: 의존성 설정 및 공통 인프라** ✅
 **완료 항목:**
@@ -1207,36 +1207,110 @@ if (todayCount >= 1) {
 
 ---
 
-### 📋 API 구현 현황 (20개 중 4개 완료)
+---
 
-#### ✅ 완료된 API (4개)
+#### **Phase 5: 컬렉션 & 추억 시스템** ✅
+**완료 항목:**
+
+**Phase 5-1: 컬렉션 시스템 (7개 컴포넌트)**
+- ✅ `Collection` Entity - userId, villageId, collectedAt, UNIQUE 제약
+- ✅ `CollectionRepository` - findByUserIdOrderByCollectedAtDesc, existsByUserIdAndVillageId, findByCollectionIdAndUserId, countByUserId
+- ✅ `CollectionRequest` - villageId 필수 검증
+- ✅ `CollectionResponse` - Collection + VillageDto 조합
+- ✅ `CollectionStatsResponse` - totalCount, regionStats (Map<String, Long>)
+- ✅ `CollectionService` - addCollection, getMyCollections, removeCollection, getCollectionStats (빈 컬렉션 처리 포함)
+- ✅ `CollectionController` - 4개 API 엔드포인트
+  - ✅ `POST /api/collections` - 컬렉션 추가
+  - ✅ `GET /api/collections` - 내 컬렉션 조회 (페이지네이션)
+  - ✅ `DELETE /api/collections/{collectionId}` - 컬렉션 제거
+  - ✅ `GET /api/collections/stats` - 통계 조회 (라우팅 순서 수정 완료)
+
+**Phase 5-2: 추억 시스템 (6개 컴포넌트)**
+- ✅ `Memory` Entity - userId, villageId, content (TEXT), visitDate, createdAt, updatedAt
+- ✅ `MemoryRepository` - findByUserIdOrderByCreatedAtDesc, findByMemoryIdAndUserId, countByUserId
+- ✅ `MemoryRequest` - content (1~1000자), villageId, visitDate (선택)
+- ✅ `MemoryResponse` - Memory + VillageDto 조합
+- ✅ `MemoryService` - createMemory, getMyMemories, getMemoryById, updateMemory, deleteMemory (권한 확인 포함)
+- ✅ `MemoryController` - 5개 API 엔드포인트
+  - ✅ `POST /api/memories` - 추억 작성
+  - ✅ `GET /api/memories` - 내 추억 목록 (페이지네이션)
+  - ✅ `GET /api/memories/{memoryId}` - 추억 상세 조회
+  - ✅ `PUT /api/memories/{memoryId}` - 추억 수정
+  - ✅ `DELETE /api/memories/{memoryId}` - 추억 삭제
+
+**파일 위치:**
+- `src/main/java/com/example/gacha/domain/collection/`
+- `src/main/java/com/example/gacha/domain/memory/`
+- `src/main/java/com/example/gacha/dto/request/CollectionRequest.java`
+- `src/main/java/com/example/gacha/dto/request/MemoryRequest.java`
+- `src/main/java/com/example/gacha/dto/response/CollectionResponse.java`
+- `src/main/java/com/example/gacha/dto/response/CollectionStatsResponse.java`
+- `src/main/java/com/example/gacha/dto/response/MemoryResponse.java`
+- `src/main/java/com/example/gacha/service/CollectionService.java`
+- `src/main/java/com/example/gacha/service/MemoryService.java`
+- `src/main/java/com/example/gacha/controller/CollectionController.java`
+- `src/main/java/com/example/gacha/controller/MemoryController.java`
+
+---
+
+#### **Phase 6: 여행지 & 마이페이지 API** ✅
+**완료 항목:**
+
+**Phase 6-1: 여행지 API (1개 컨트롤러, 2개 엔드포인트)**
+- ✅ `VillageController` - 여행지 조회 API
+  - ✅ `GET /api/villages/{villageId}` - 여행지 상세 조회 (isCollected 포함, JWT 선택)
+  - ✅ `GET /api/villages` - 여행지 목록 조회 (페이지네이션, 필터링)
+- ✅ `VillageResponse.from(VillageDto, boolean)` - isCollected 지원 오버로드 추가
+
+**Phase 6-2: 마이페이지 API (4개 컴포넌트)**
+- ✅ `UserResponse` - userId, username, email, createdAt, collectionCount, memoryCount
+  - `from(User)` - 기본 팩토리 메서드
+  - `withStats(User, Long, Long)` - 통계 포함 팩토리 메서드
+- ✅ `UserUpdateRequest` - email (이메일 형식 검증)
+- ✅ `UserService` - getMyInfo, updateMyInfo
+- ✅ `UserController` - 2개 API 엔드포인트
+  - ✅ `GET /api/users/me` - 내 정보 조회 (통계 포함)
+  - ✅ `PUT /api/users/me` - 이메일 수정
+
+**파일 위치:**
+- `src/main/java/com/example/gacha/controller/VillageController.java`
+- `src/main/java/com/example/gacha/controller/UserController.java`
+- `src/main/java/com/example/gacha/dto/request/UserUpdateRequest.java`
+- `src/main/java/com/example/gacha/dto/response/UserResponse.java`
+- `src/main/java/com/example/gacha/service/UserService.java`
+
+---
+
+### 📋 API 구현 현황 - 전체 완료! (17개 / 17개)
+
+#### ✅ 인증 API (2개)
 1. ✅ `POST /api/auth/signup` - 회원가입
 2. ✅ `POST /api/auth/login` - 로그인 (JWT 토큰 발급)
-3. ✅ `POST /api/gacha/draw` - 가챠 뽑기 (하루 1회 제한) ⭐
+
+#### ✅ 가챠 API (2개) ⭐ 핵심 기능
+3. ✅ `POST /api/gacha/draw` - 가챠 뽑기 (하루 1회 제한, 필터링)
 4. ✅ `GET /api/gacha/status` - 가챠 상태 확인
 
-#### 🔲 미완료 API (16개) - Phase 5~6에서 구현 예정
+#### ✅ 여행지 API (2개)
+5. ✅ `GET /api/villages/{villageId}` - 여행지 상세 조회 (컬렉션 여부 포함)
+6. ✅ `GET /api/villages` - 여행지 목록 조회 (페이지네이션, 필터링)
 
-**여행지 API (2개) - Phase 6**
-- 🔲 `GET /api/villages/{villageId}` - 여행지 상세 조회
-- 🔲 `GET /api/villages` - 여행지 목록 조회 (페이지네이션, 필터링)
+#### ✅ 컬렉션 API (4개)
+7. ✅ `POST /api/collections` - 컬렉션에 추가
+8. ✅ `GET /api/collections` - 내 컬렉션 조회 (페이지네이션)
+9. ✅ `DELETE /api/collections/{collectionId}` - 컬렉션 제거
+10. ✅ `GET /api/collections/stats` - 컬렉션 통계 (지역별 집계)
 
-**컬렉션 API (4개) - Phase 5**
-- 🔲 `GET /api/collections` - 내 컬렉션 조회
-- 🔲 `POST /api/collections` - 여행지 컬렉션에 추가
-- 🔲 `DELETE /api/collections/{collectionId}` - 컬렉션에서 제거
-- 🔲 `GET /api/collections/stats` - 컬렉션 통계 (지역별 집계)
+#### ✅ 추억 API (5개)
+11. ✅ `POST /api/memories` - 추억 작성
+12. ✅ `GET /api/memories` - 내 추억 목록 (페이지네이션)
+13. ✅ `GET /api/memories/{memoryId}` - 추억 상세 조회
+14. ✅ `PUT /api/memories/{memoryId}` - 추억 수정
+15. ✅ `DELETE /api/memories/{memoryId}` - 추억 삭제
 
-**추억 API (5개) - Phase 5**
-- 🔲 `GET /api/memories` - 내 추억 목록 조회
-- 🔲 `POST /api/memories` - 추억 작성
-- 🔲 `GET /api/memories/{memoryId}` - 추억 상세 조회
-- 🔲 `PUT /api/memories/{memoryId}` - 추억 수정
-- 🔲 `DELETE /api/memories/{memoryId}` - 추억 삭제
-
-**마이페이지 API (2개) - Phase 6**
-- 🔲 `GET /api/users/me` - 내 정보 조회 (컬렉션 수, 추억 수 통계 포함)
-- 🔲 `PUT /api/users/me` - 내 정보 수정
+#### ✅ 마이페이지 API (2개)
+16. ✅ `GET /api/users/me` - 내 정보 조회 (통계 포함)
+17. ✅ `PUT /api/users/me` - 내 정보 수정 (이메일)
 
 ---
 
@@ -1465,7 +1539,7 @@ src/main/java/com/example/gacha/
 
 ---
 
-### 📦 최종 프로젝트 구조 (Phase 6 완료 후)
+### 📦 최종 프로젝트 구조 - 전체 완료!
 
 ```
 src/main/java/com/example/gacha/
@@ -1484,43 +1558,43 @@ src/main/java/com/example/gacha/
 │   │   ├── GachaHistory.java ✅
 │   │   └── GachaHistoryRepository.java ✅
 │   ├── collection/
-│   │   ├── Collection.java 🔲
-│   │   └── CollectionRepository.java 🔲
+│   │   ├── Collection.java ✅
+│   │   └── CollectionRepository.java ✅
 │   └── memory/
-│       ├── Memory.java 🔲
-│       └── MemoryRepository.java 🔲
+│       ├── Memory.java ✅
+│       └── MemoryRepository.java ✅
 ├── dto/
 │   ├── request/
 │   │   ├── SignupRequest.java ✅
 │   │   ├── LoginRequest.java ✅
 │   │   ├── GachaDrawRequest.java ✅
-│   │   ├── CollectionRequest.java 🔲
-│   │   ├── MemoryRequest.java 🔲
-│   │   └── UserUpdateRequest.java 🔲
+│   │   ├── CollectionRequest.java ✅
+│   │   ├── MemoryRequest.java ✅
+│   │   └── UserUpdateRequest.java ✅
 │   └── response/
 │       ├── ApiResponse.java ✅
 │       ├── AuthResponse.java ✅
 │       ├── VillageResponse.java ✅
 │       ├── GachaStatusResponse.java ✅
-│       ├── CollectionResponse.java 🔲
-│       ├── CollectionStatsResponse.java 🔲
-│       ├── MemoryResponse.java 🔲
-│       └── UserResponse.java 🔲
+│       ├── CollectionResponse.java ✅
+│       ├── CollectionStatsResponse.java ✅
+│       ├── MemoryResponse.java ✅
+│       └── UserResponse.java ✅
 ├── service/
 │   ├── AuthService.java ✅
 │   ├── GachaService.java ✅
-│   ├── CollectionService.java 🔲
-│   ├── MemoryService.java 🔲
-│   └── UserService.java 🔲
+│   ├── CollectionService.java ✅
+│   ├── MemoryService.java ✅
+│   └── UserService.java ✅
 ├── controller/
 │   ├── AuthController.java ✅
 │   ├── GachaController.java ✅
-│   ├── VillageController.java 🔲
-│   ├── CollectionController.java 🔲
-│   ├── MemoryController.java 🔲
-│   └── UserController.java 🔲
+│   ├── VillageController.java ✅
+│   ├── CollectionController.java ✅
+│   ├── MemoryController.java ✅
+│   └── UserController.java ✅
 ├── util/
-│   ├── JwtUtil.java ✅
+│   ├── JwtUtil.java ✅ (JJWT 0.11.5 최신 API)
 │   └── PasswordUtil.java ✅
 └── exception/
     ├── ErrorCode.java ✅
@@ -1588,34 +1662,80 @@ CollectionResponse response = CollectionResponse.builder()
 
 ---
 
-### 📊 진행률 요약
+### 📊 진행률 요약 - 프로젝트 100% 완료!
 
-| Phase | 진행률 | 완료 항목 | 미완료 항목 |
-|-------|--------|----------|-----------|
-| Phase 1 | 100% | 공통 인프라 10개 | - |
-| Phase 2 | 100% | CSV 처리 3개 | - |
-| Phase 3 | 100% | 인증 7개 | - |
-| Phase 4 | 100% | 가챠 7개 | - |
-| **Phase 5** | **0%** | - | 컬렉션 7개 + 추억 6개 |
-| **Phase 6** | **0%** | - | 여행지 1개 + 마이페이지 4개 |
-| **전체** | **60%** | **27개** | **18개** |
+| Phase | 진행률 | 완료 항목 | 상태 |
+|-------|--------|----------|------|
+| Phase 1 | 100% | 공통 인프라 10개 | ✅ 완료 |
+| Phase 2 | 100% | CSV 처리 3개 | ✅ 완료 |
+| Phase 3 | 100% | 인증 7개 | ✅ 완료 |
+| Phase 4 | 100% | 가챠 7개 | ✅ 완료 |
+| Phase 5 | 100% | 컬렉션 7개 + 추억 6개 | ✅ 완료 |
+| Phase 6 | 100% | 여행지 2개 + 마이페이지 4개 | ✅ 완료 |
+| **전체** | **100%** | **46개 컴포넌트** | ✅ 전체 완료 |
 
-**API 완성도:** 4/20 (20%)
+**API 완성도:** 17/17 (100%)
 
 ---
 
 ### 🎖️ 핵심 성과
 
-1. ✅ **가챠 시스템 완성** - 프로젝트의 핵심 기능!
-2. ✅ **하루 1회 제한** - `LocalDateTime` 기반 정확한 제한
-3. ✅ **CSV 기반 데이터** - 공공데이터 활용, 캐싱으로 성능 최적화
-4. ✅ **JWT 인증** - 간단하지만 효과적인 토큰 기반 인증
-5. ✅ **통일된 응답 형식** - `ApiResponse<T>`로 일관성 유지
-6. ✅ **전역 예외 처리** - `@ControllerAdvice`로 깔끔한 에러 핸들링
+1. ✅ **가챠 시스템 완성** - 프로젝트의 핵심 기능! (하루 1회 제한, 필터링)
+2. ✅ **컬렉션 시스템** - 중복 방지, 지역별 통계, 페이지네이션
+3. ✅ **추억 시스템** - CRUD 완성, 권한 관리, 방문 날짜 기록
+4. ✅ **마이페이지** - 사용자 정보 + 통계 (컬렉션 수, 추억 수)
+5. ✅ **CSV 기반 데이터** - 공공데이터 활용, 캐싱으로 성능 최적화
+6. ✅ **JWT 인증** - JJWT 0.11.5 최신 API 적용, SecretKey 기반
+7. ✅ **통일된 응답 형식** - `ApiResponse<T>`로 일관성 유지
+8. ✅ **전역 예외 처리** - `@ControllerAdvice`로 깔끔한 에러 핸들링
+9. ✅ **경로 라우팅 최적화** - 구체적 경로 우선 매칭
 
 ---
 
-**다음 개발자를 위한 메시지:**
-Phase 5부터 시작하세요! Collection과 Memory 시스템을 구현하면 됩니다.
-위의 상세한 가이드를 따라 진행하면 됩니다. 화이팅! 💪
+### 🔧 주요 기술적 해결 사항
+
+#### 1. JWT 인증 개선 (JJWT 0.11.5 최신 API)
+**문제**: 초기 구현에서 deprecated API 사용으로 Base64 디코딩 오류 발생
+**해결**:
+```java
+// 기존 (deprecated)
+.signWith(SignatureAlgorithm.HS512, secret)
+
+// 개선 후
+private SecretKey getSigningKey() {
+    byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+    return Keys.hmacShaKeyFor(keyBytes);
+}
+.signWith(getSigningKey())
+```
+
+#### 2. Spring MVC 경로 매칭 순서 최적화
+**문제**: `/api/collections/stats` 호출 시 정적 리소스 오류 발생
+**원인**: `@GetMapping("/stats")`가 `@DeleteMapping("/{collectionId}")` 뒤에 선언됨
+**해결**: 구체적인 경로를 경로 변수보다 먼저 선언
+```java
+@GetMapping("/stats")      // 1. 구체적 경로 우선
+@GetMapping                 // 2. 기본 경로
+@DeleteMapping("/{collectionId}")  // 3. 경로 변수 마지막
+```
+
+#### 3. 컬렉션 통계 빈 데이터 처리
+**문제**: 컬렉션이 없을 때 Stream groupingBy에서 오류 가능성
+**해결**: 빈 컬렉션 명시적 처리
+```java
+if (collections.isEmpty()) {
+    regionStats = new HashMap<>();
+    log.info("No collections found, returning empty stats");
+} else {
+    regionStats = collections.stream()
+        .map(collection -> {...})
+        .collect(Collectors.groupingBy(...));
+}
+```
+
+---
+
+**프로젝트 완료!**
+전체 17개 API 엔드포인트가 정상 작동하며, 가챠 여행 서비스의 모든 핵심 기능이 구현되었습니다.
+Postman 테스트를 통해 API를 확인하고, 프론트엔드와 연동하세요! 🎉
 
