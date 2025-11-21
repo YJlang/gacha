@@ -29,6 +29,11 @@ public class VillageResponse {
     private String programContent;
 
     /**
+     * 이미지 URL
+     */
+    private String imageUrl;
+
+    /**
      * 새로 뽑은 여행지인지 여부 (가챠 응답 시에만 사용)
      */
     private Boolean isNew;
@@ -63,6 +68,7 @@ public class VillageResponse {
                 .longitude(village.getLongitude())
                 .programName(village.getProgramName())
                 .programContent(village.getProgramContent())
+                .imageUrl(village.getImageUrl())
                 .build();
     }
 
@@ -81,6 +87,7 @@ public class VillageResponse {
                 .longitude(village.getLongitude())
                 .programName(village.getProgramName())
                 .programContent(village.getProgramContent())
+                .imageUrl(village.getImageUrl())
                 .isNew(isNew)
                 .drawnAt(drawnAt)
                 .build();
@@ -101,6 +108,7 @@ public class VillageResponse {
                 .longitude(village.getLongitude())
                 .programName(village.getProgramName())
                 .programContent(village.getProgramContent())
+                .imageUrl(village.getImageUrl())
                 .isCollected(isCollected)
                 .build();
     }

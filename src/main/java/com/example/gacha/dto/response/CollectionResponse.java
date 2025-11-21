@@ -24,6 +24,7 @@ public class CollectionResponse {
     private Double longitude;
     private String programName;
     private String programContent;
+    private String imageUrl;
     private LocalDateTime collectedAt;
 
     /**
@@ -42,6 +43,7 @@ public class CollectionResponse {
                 .longitude(village.getLongitude())
                 .programName(village.getProgramName())
                 .programContent(village.getProgramContent())
+                .imageUrl(village.getImageUrl())
                 .collectedAt(collection.getCollectedAt())
                 .build();
     }

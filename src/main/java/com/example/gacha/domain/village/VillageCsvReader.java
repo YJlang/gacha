@@ -2,6 +2,8 @@ package com.example.gacha.domain.village;
 
 import com.example.gacha.exception.BusinessException;
 import com.example.gacha.exception.ErrorCode;
+import com.example.gacha.util.ImageUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -12,11 +14,9 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,8 +27,11 @@ import java.util.stream.Collectors;
  * 캐싱을 통해 성능 최적화
  */
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class VillageCsvReader {
+
+    private final ImageUtil imageUtil;
 
     @Value("${csv.file.path}")
     private String csvFilePath;
@@ -52,41 +55,43 @@ public class VillageCsvReader {
             Resource resource = new ClassPathResource(csvFilePath.replace("classpath:", ""));
             InputStream inputStream = resource.getInputStream();
 
-            // BOM 제거를 위한 처리
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(inputStream, encoding)
-            );
+            // 인코딩을 명시적으로 지정하여 Reader 생성
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream, encoding);
 
-            // 첫 번째 줄 읽기 (BOM 제거)
-            String firstLine = reader.readLine();
-            if (firstLine != null && firstLine.startsWith("\uFEFF")) {
-                firstLine = firstLine.substring(1);
-            }
-
-            // 나머지 줄 읽기
-            String remainingLines = reader.lines().collect(Collectors.joining("\n"));
-
-            // CSV 파서 설정
+            // CSV 파서 설정 - Reader를 직접 전달
             CSVParser parser = CSVFormat.DEFAULT
-                    .withHeader() // 첫 줄을 헤더로 사용
-                    .withIgnoreHeaderCase()
-                    .withTrim()
-                    .parse(new StringReader(firstLine + "\n" + remainingLines));
+                    .builder()
+                    .setHeader()
+                    .setSkipHeaderRecord(false)
+                    .setIgnoreHeaderCase(true)
+                    .setTrim(true)
+                    .setIgnoreSurroundingSpaces(true)
+                    .build()
+                    .parse(inputStreamReader);
 
             long id = 1;
             for (CSVRecord record : parser) {
                 try {
+                    Long villageId = id++;
+
+                    // 주소는 도로명주소 우선, 없으면 지번주소
+                    String address = getValue(record, "소재지도로명주소");
+                    if (address == null || address.isEmpty()) {
+                        address = getValue(record, "소재지지번주소");
+                    }
+
                     VillageDto village = VillageDto.builder()
-                            .villageId(id++)
-                            .villageName(getValue(record, "마을명"))
+                            .villageId(villageId)
+                            .villageName(getValue(record, "체험마을명"))
                             .sidoName(getValue(record, "시도명"))
                             .sigunguName(getValue(record, "시군구명"))
-                            .address(getValue(record, "주소"))
-                            .phoneNumber(getValue(record, "전화번호"))
+                            .address(address)
+                            .phoneNumber(getValue(record, "대표전화번호"))
                             .latitude(parseDouble(getValue(record, "위도")))
                             .longitude(parseDouble(getValue(record, "경도")))
                             .programName(getValue(record, "체험프로그램명"))
-                            .programContent(getValue(record, "체험프로그램내용"))
+                            .programContent(getValue(record, "체험프로그램구분"))
+                            .imageUrl(imageUtil.generatePicsumImageUrl(villageId))
                             .build();
 
                     villages.add(village);

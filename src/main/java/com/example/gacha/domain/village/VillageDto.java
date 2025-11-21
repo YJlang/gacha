@@ -65,4 +65,9 @@ public class VillageDto {
      * 체험프로그램 상세 내용
      */
     private String programContent;
+
+    /**
+     * 이미지 URL (동적 생성)
+     */
+    private String imageUrl;
 }

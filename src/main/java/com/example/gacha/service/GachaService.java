@@ -19,13 +19,15 @@ import java.util.List;
 
 /**
  * 가챠 서비스
- * 핵심 기능: 하루 1회 제한, 랜덤 여행지 뽑기
+ * 핵심 기능: 하루 100회 제한, 랜덤 여행지 뽑기
  */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 @Slf4j
 public class GachaService {
+
+    private static final int DAILY_GACHA_LIMIT = 100; // 하루 가챠 제한 횟수
 
     private final VillageService villageService;
     private final GachaHistoryRepository gachaHistoryRepository;
@@ -43,12 +45,12 @@ public class GachaService {
         log.info("Gacha draw attempt - userId: {}, region: {}, programType: {}",
                 userId, request.getRegion(), request.getProgramType());
 
-        // 오늘 가챠 횟수 확인 (하루 1회 제한)
+        // 오늘 가챠 횟수 확인 (하루 100회 제한)
         LocalDateTime todayStart = getTodayStart();
         long todayCount = gachaHistoryRepository.countByUserIdAndDrawnAtAfter(userId, todayStart);
 
-        if (todayCount >= 1) {
-            log.warn("Daily gacha limit exceeded - userId: {}, todayCount: {}", userId, todayCount);
+        if (todayCount >= DAILY_GACHA_LIMIT) {
+            log.warn("Daily gacha limit exceeded - userId: {}, todayCount: {}/{}", userId, todayCount, DAILY_GACHA_LIMIT);
             throw new BusinessException(ErrorCode.DAILY_LIMIT_EXCEEDED);
         }
 
@@ -93,8 +95,8 @@ public class GachaService {
                 .findByUserIdAndDrawnAtAfterOrderByDrawnAtDesc(userId, todayStart);
 
         long todayDrawCount = todayHistory.size();
-        boolean canDraw = todayDrawCount < 1; // 하루 1회 제한
-        int remainingCount = canDraw ? 1 : 0;
+        boolean canDraw = todayDrawCount < DAILY_GACHA_LIMIT; // 하루 100회 제한
+        int remainingCount = Math.max(0, DAILY_GACHA_LIMIT - (int) todayDrawCount);
 
         // 마지막 가챠 시간
         LocalDateTime lastDrawTime = todayHistory.isEmpty() ? null : todayHistory.get(0).getDrawnAt();
