@@ -4,6 +4,7 @@ import com.example.gacha.domain.collection.CollectionRepository;
 import com.example.gacha.domain.village.VillageDto;
 import com.example.gacha.domain.village.VillageService;
 import com.example.gacha.dto.response.ApiResponse;
+import com.example.gacha.dto.response.PageResponse;
 import com.example.gacha.dto.response.VillageResponse;
 import com.example.gacha.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +32,7 @@ public class VillageController {
     @GetMapping("/{villageId}")
     public ApiResponse<VillageResponse> getVillageById(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @PathVariable Long villageId
-    ) {
+            @PathVariable Long villageId) {
         VillageDto village = villageService.getVillageById(villageId);
 
         // JWT 토큰이 있으면 컬렉션 여부 확인
@@ -56,14 +56,15 @@ public class VillageController {
      * GET /api/villages?page=0&size=20&region=경상남도&programType=체험
      */
     @GetMapping
-    public ApiResponse<Page<VillageDto>> getAllVillages(
+    public ApiResponse<PageResponse<VillageDto>> getAllVillages(
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String programType,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+            @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<VillageDto> response = villageService.getAllVillages(region, programType, pageable);
+        Page<VillageDto> pageResult = villageService.getAllVillages(region, programType, pageable);
+        PageResponse<VillageDto> response = PageResponse.from(pageResult);
         return ApiResponse.success(response, "여행지 목록 조회 성공");
     }
+
 }

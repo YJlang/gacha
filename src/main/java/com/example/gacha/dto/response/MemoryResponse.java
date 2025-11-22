@@ -27,6 +27,7 @@ public class MemoryResponse {
     private String programContent;
     private String content;
     private LocalDate visitDate;
+    private String imageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -48,6 +49,7 @@ public class MemoryResponse {
                 .programContent(village.getProgramContent())
                 .content(memory.getContent())
                 .visitDate(memory.getVisitDate())
+                .imageUrl(memory.getImageUrl())
                 .createdAt(memory.getCreatedAt())
                 .updatedAt(memory.getUpdatedAt())
                 .build();

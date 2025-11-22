@@ -30,4 +30,9 @@ public class MemoryRequest {
      * 방문 날짜 (선택사항)
      */
     private LocalDate visitDate;
+
+    /**
+     * 이미지 URL (컨트롤러에서 파일 업로드 후 설정)
+     */
+    private String imageUrl;
 }

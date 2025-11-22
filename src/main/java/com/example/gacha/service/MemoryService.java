@@ -27,6 +27,7 @@ public class MemoryService {
 
     private final MemoryRepository memoryRepository;
     private final VillageService villageService;
+    private final FileStorageService fileStorageService;
 
     /**
      * 추억 작성
@@ -47,6 +48,7 @@ public class MemoryService {
                 .villageId(request.getVillageId())
                 .content(request.getContent())
                 .visitDate(request.getVisitDate())
+                .imageUrl(request.getImageUrl()) // 컨트롤러에서 설정한 imageUrl 사용
                 .build();
 
         Memory savedMemory = memoryRepository.save(memory);
@@ -110,17 +112,26 @@ public class MemoryService {
         Memory memory = memoryRepository.findByMemoryIdAndUserId(memoryId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMORY_NOT_FOUND));
 
-        // 2. 추억 내용 업데이트
+        // 2. 이미지 업데이트 처리 (새 이미지가 있으면 기존 이미지 삭제)
+        if (request.getImageUrl() != null && !request.getImageUrl().equals(memory.getImageUrl())) {
+            // 기존 이미지 삭제
+            if (memory.getImageUrl() != null) {
+                fileStorageService.deleteMemoryImage(memory.getImageUrl());
+            }
+            memory.setImageUrl(request.getImageUrl());
+        }
+
+        // 3. 추억 내용 업데이트
         memory.setContent(request.getContent());
         memory.setVisitDate(request.getVisitDate());
 
         Memory updatedMemory = memoryRepository.save(memory);
         log.info("User {} updated memory {}", userId, memoryId);
 
-        // 3. 여행지 정보 조회
+        // 4. 여행지 정보 조회
         VillageDto village = villageService.getVillageById(memory.getVillageId());
 
-        // 4. 응답 생성
+        // 5. 응답 생성
         return MemoryResponse.from(updatedMemory, village);
     }
 
@@ -133,7 +144,12 @@ public class MemoryService {
         Memory memory = memoryRepository.findByMemoryIdAndUserId(memoryId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMORY_NOT_FOUND));
 
-        // 2. 추억 삭제
+        // 2. 이미지 파일 삭제
+        if (memory.getImageUrl() != null) {
+            fileStorageService.deleteMemoryImage(memory.getImageUrl());
+        }
+
+        // 3. 추억 삭제
         memoryRepository.delete(memory);
         log.info("User {} deleted memory {}", userId, memoryId);
     }

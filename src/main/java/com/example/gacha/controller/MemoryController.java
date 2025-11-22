@@ -3,15 +3,17 @@ package com.example.gacha.controller;
 import com.example.gacha.dto.request.MemoryRequest;
 import com.example.gacha.dto.response.ApiResponse;
 import com.example.gacha.dto.response.MemoryResponse;
+import com.example.gacha.dto.response.PageResponse;
+import com.example.gacha.service.FileStorageService;
 import com.example.gacha.service.MemoryService;
 import com.example.gacha.util.JwtUtil;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 추억 관련 API
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class MemoryController {
 
     private final MemoryService memoryService;
+    private final FileStorageService fileStorageService;
     private final JwtUtil jwtUtil;
 
     /**
@@ -32,10 +35,16 @@ public class MemoryController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<MemoryResponse> createMemory(
             @RequestHeader("Authorization") String authorization,
-            @Valid @RequestBody MemoryRequest request
-    ) {
+            @ModelAttribute MemoryRequest request,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
         String token = jwtUtil.extractToken(authorization);
         Long userId = jwtUtil.getUserIdFromToken(token);
+
+        // 이미지 파일이 있으면 저장
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = fileStorageService.storeMemoryImage(image);
+            request.setImageUrl(imageUrl);
+        }
 
         MemoryResponse response = memoryService.createMemory(userId, request);
         return ApiResponse.success(response, "추억이 작성되었습니다.");
@@ -46,16 +55,16 @@ public class MemoryController {
      * GET /api/memories?page=0&size=20
      */
     @GetMapping
-    public ApiResponse<Page<MemoryResponse>> getMyMemories(
+    public ApiResponse<PageResponse<MemoryResponse>> getMyMemories(
             @RequestHeader("Authorization") String authorization,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+            @RequestParam(defaultValue = "20") int size) {
         String token = jwtUtil.extractToken(authorization);
         Long userId = jwtUtil.getUserIdFromToken(token);
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<MemoryResponse> response = memoryService.getMyMemories(userId, pageable);
+        Page<MemoryResponse> pageResult = memoryService.getMyMemories(userId, pageable);
+        PageResponse<MemoryResponse> response = PageResponse.from(pageResult);
         return ApiResponse.success(response, "내 추억 목록 조회 성공");
     }
 
@@ -66,8 +75,7 @@ public class MemoryController {
     @GetMapping("/{memoryId}")
     public ApiResponse<MemoryResponse> getMemoryById(
             @RequestHeader("Authorization") String authorization,
-            @PathVariable Long memoryId
-    ) {
+            @PathVariable Long memoryId) {
         String token = jwtUtil.extractToken(authorization);
         Long userId = jwtUtil.getUserIdFromToken(token);
 
@@ -83,10 +91,16 @@ public class MemoryController {
     public ApiResponse<MemoryResponse> updateMemory(
             @RequestHeader("Authorization") String authorization,
             @PathVariable Long memoryId,
-            @Valid @RequestBody MemoryRequest request
-    ) {
+            @ModelAttribute MemoryRequest request,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
         String token = jwtUtil.extractToken(authorization);
         Long userId = jwtUtil.getUserIdFromToken(token);
+
+        // 이미지 파일이 있으면 저장
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = fileStorageService.storeMemoryImage(image);
+            request.setImageUrl(imageUrl);
+        }
 
         MemoryResponse response = memoryService.updateMemory(userId, memoryId, request);
         return ApiResponse.success(response, "추억이 수정되었습니다.");
@@ -99,8 +113,7 @@ public class MemoryController {
     @DeleteMapping("/{memoryId}")
     public ApiResponse<Void> deleteMemory(
             @RequestHeader("Authorization") String authorization,
-            @PathVariable Long memoryId
-    ) {
+            @PathVariable Long memoryId) {
         String token = jwtUtil.extractToken(authorization);
         Long userId = jwtUtil.getUserIdFromToken(token);
 

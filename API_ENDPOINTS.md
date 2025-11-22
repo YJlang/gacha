@@ -289,14 +289,20 @@
 - **Frontend**: `/memories`
 - **Backend**: `/api/memories`
 - **Headers**: `Authorization: Bearer {token}`
-- **Request Body**:
-  ```json
-  {
-    "villageId": 1,
-    "content": "정말 즐거운 여행이었습니다!",
-    "visitDate": "2025-11-20"
-  }
+- **Content-Type**: `multipart/form-data`
+- **Request Body** (FormData):
+  ```javascript
+  const formData = new FormData();
+  formData.append('villageId', 1);
+  formData.append('content', '정말 즐거운 여행이었습니다!');
+  formData.append('visitDate', '2025-11-20');
+  formData.append('image', fileObject);  // 선택사항: File 객체
   ```
+- **Request Fields**:
+  - `villageId` (number, required): 여행지 ID
+  - `content` (string, required): 추억 내용 (1-1000자)
+  - `visitDate` (string, optional): 방문 날짜 (YYYY-MM-DD 형식)
+  - `image` (File, optional): 이미지 파일 (jpg, jpeg, png, gif, webp, 최대 5MB)
 - **Response**:
   ```json
   {
@@ -308,7 +314,9 @@
       "villageName": "행복마을",
       "content": "정말 즐거운 여행이었습니다!",
       "visitDate": "2025-11-20",
-      "createdAt": "2025-11-21T14:30:00"
+      "imageUrl": "http://localhost:8080/uploads/memories/a1b2c3d4-5e6f-7g8h-9i0j-kl1mn2op3qr4_photo.jpg",
+      "createdAt": "2025-11-21T14:30:00",
+      "updatedAt": "2025-11-21T14:30:00"
     }
   }
   ```
@@ -330,6 +338,7 @@
           "villageName": "행복마을",
           "content": "정말 즐거운 여행이었습니다!",
           "visitDate": "2025-11-20",
+          "imageUrl": "http://localhost:8080/uploads/memories/a1b2c3d4-5e6f-7g8h-9i0j-kl1mn2op3qr4_photo.jpg",
           "createdAt": "2025-11-21T14:30:00",
           "updatedAt": "2025-11-21T14:30:00"
         }
@@ -368,13 +377,18 @@
 - **Frontend**: `/memories/{memoryId}`
 - **Backend**: `/api/memories/{memoryId}`
 - **Headers**: `Authorization: Bearer {token}`
-- **Request Body**:
-  ```json
-  {
-    "content": "수정된 내용입니다.",
-    "visitDate": "2025-11-20"
-  }
+- **Content-Type**: `multipart/form-data`
+- **Request Body** (FormData):
+  ```javascript
+  const formData = new FormData();
+  formData.append('content', '수정된 내용입니다.');
+  formData.append('visitDate', '2025-11-20');
+  formData.append('image', newFileObject);  // 선택사항: 새 이미지로 교체
   ```
+- **Request Fields**:
+  - `content` (string, required): 추억 내용 (1-1000자)
+  - `visitDate` (string, optional): 방문 날짜 (YYYY-MM-DD 형식)
+  - `image` (File, optional): 새 이미지 파일 (기존 이미지는 자동 삭제됨)
 - **Response**:
   ```json
   {
@@ -383,6 +397,16 @@
     "data": {
       "memoryId": 1,
       "villageId": 1,
+      "villageName": "행복마을",
+      "content": "수정된 내용입니다.",
+      "visitDate": "2025-11-20",
+      "imageUrl": "http://localhost:8080/uploads/memories/b2c3d4e5-6f7g-8h9i-0j1k-lm2no3pq4rs5_new.jpg",
+      "createdAt": "2025-11-21T14:30:00",
+      "updatedAt": "2025-11-21T15:00:00"
+    }
+  }
+  ```
+
       "villageName": "행복마을",
       "content": "수정된 내용입니다.",
       "visitDate": "2025-11-20",

@@ -4,6 +4,7 @@ import com.example.gacha.dto.request.CollectionRequest;
 import com.example.gacha.dto.response.ApiResponse;
 import com.example.gacha.dto.response.CollectionResponse;
 import com.example.gacha.dto.response.CollectionStatsResponse;
+import com.example.gacha.dto.response.PageResponse;
 import com.example.gacha.service.CollectionService;
 import com.example.gacha.util.JwtUtil;
 import jakarta.validation.Valid;
@@ -33,8 +34,7 @@ public class CollectionController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CollectionResponse> addCollection(
             @RequestHeader("Authorization") String authorization,
-            @Valid @RequestBody CollectionRequest request
-    ) {
+            @Valid @RequestBody CollectionRequest request) {
         String token = jwtUtil.extractToken(authorization);
         Long userId = jwtUtil.getUserIdFromToken(token);
 
@@ -48,8 +48,7 @@ public class CollectionController {
      */
     @GetMapping("/stats")
     public ApiResponse<CollectionStatsResponse> getCollectionStats(
-            @RequestHeader("Authorization") String authorization
-    ) {
+            @RequestHeader("Authorization") String authorization) {
         String token = jwtUtil.extractToken(authorization);
         Long userId = jwtUtil.getUserIdFromToken(token);
 
@@ -62,16 +61,16 @@ public class CollectionController {
      * GET /api/collections?page=0&size=20
      */
     @GetMapping
-    public ApiResponse<Page<CollectionResponse>> getMyCollections(
+    public ApiResponse<PageResponse<CollectionResponse>> getMyCollections(
             @RequestHeader("Authorization") String authorization,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+            @RequestParam(defaultValue = "20") int size) {
         String token = jwtUtil.extractToken(authorization);
         Long userId = jwtUtil.getUserIdFromToken(token);
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<CollectionResponse> response = collectionService.getMyCollections(userId, pageable);
+        Page<CollectionResponse> pageResult = collectionService.getMyCollections(userId, pageable);
+        PageResponse<CollectionResponse> response = PageResponse.from(pageResult);
         return ApiResponse.success(response, "내 컬렉션 조회 성공");
     }
 
@@ -82,8 +81,7 @@ public class CollectionController {
     @DeleteMapping("/{collectionId}")
     public ApiResponse<Void> removeCollection(
             @RequestHeader("Authorization") String authorization,
-            @PathVariable Long collectionId
-    ) {
+            @PathVariable Long collectionId) {
         String token = jwtUtil.extractToken(authorization);
         Long userId = jwtUtil.getUserIdFromToken(token);
 

@@ -34,6 +34,9 @@ public class Memory {
     @Column(name = "visit_date")
     private LocalDate visitDate;
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
