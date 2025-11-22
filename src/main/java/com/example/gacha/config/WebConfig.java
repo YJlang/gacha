@@ -22,7 +22,8 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/api/**") // /api/** 경로에 대해 CORS 허용
                 .allowedOrigins(
                         "http://localhost:3000", // React 개발 서버
-                        "http://127.0.0.1:3000" // localhost의 다른 표현
+                        "http://127.0.0.1:3000", // localhost의 다른 표현
+                        "http://travelgacha.netlify.app"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 허용할 HTTP 메서드
                 .allowedHeaders("*") // 모든 헤더 허용
