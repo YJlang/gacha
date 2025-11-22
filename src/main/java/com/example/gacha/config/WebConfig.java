@@ -24,8 +24,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://localhost:3000", // React 개발 서버
                         "http://127.0.0.1:3000", // localhost의 다른 표현
                         "https://travelgacha.netlify.app",
-                        "https://gachalikealion.duckdns.org"
-                )
+                        "https://gachalikealion.duckdns.org/api/**")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 허용할 HTTP 메서드
                 .allowedHeaders("*") // 모든 헤더 허용
                 .allowCredentials(true) // 쿠키/인증 정보 허용
