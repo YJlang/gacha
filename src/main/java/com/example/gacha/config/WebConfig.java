@@ -19,15 +19,17 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {
-        registry.addMapping("/api/**") // /api/** 경로에 대해 CORS 허용
+        registry.addMapping("/**") // 모든 경로에 대해 CORS 허용
                 .allowedOrigins(
                         "http://localhost:3000", // React 개발 서버
                         "http://127.0.0.1:3000", // localhost의 다른 표현
-                        "https://travelgacha.netlify.app",
-                        "https://gachalikealion.duckdns.org/api/**")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 허용할 HTTP 메서드
+                        "https://travelgacha.netlify.app", // Netlify 배포
+                        "https://gachalikealion.duckdns.org", // DuckDNS 도메인
+                        "http://gachalikealion.duckdns.org") // HTTP도 허용
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH") // 허용할 HTTP 메서드
                 .allowedHeaders("*") // 모든 헤더 허용
                 .allowCredentials(true) // 쿠키/인증 정보 허용
+                .exposedHeaders("Authorization") // Authorization 헤더 노출
                 .maxAge(3600); // Pre-flight 요청 캐시 시간 (1시간)
     }
 
