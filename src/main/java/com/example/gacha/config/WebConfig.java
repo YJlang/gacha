@@ -1,5 +1,6 @@
 package com.example.gacha.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -13,19 +14,18 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    @Value("${file.upload.dir:/opt/gacha/uploads/memories}")
+    private String uploadDir;
+
     /**
      * CORS 설정
      * - React 개발 서버(localhost:3000)에서 Spring Boot API(localhost:8080)로의 요청 허용
+     * - EC2 환경에서는 EC2 Public IP도 허용 (환경에 따라 동적으로 추가 가능)
      */
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {
         registry.addMapping("/**") // 모든 경로에 대해 CORS 허용
-                .allowedOrigins(
-                        "http://localhost:3000", // React 개발 서버
-                        "http://127.0.0.1:3000", // localhost의 다른 표현
-                        "https://travelgacha.netlify.app", // Netlify 배포
-                        "https://gachalikealion.duckdns.org", // DuckDNS 도메인
-                        "http://gachalikealion.duckdns.org") // HTTP도 허용
+                .allowedOriginPatterns("*") // 모든 origin 허용 (프로덕션에서는 특정 도메인으로 제한 권장)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH") // 허용할 HTTP 메서드
                 .allowedHeaders("*") // 모든 헤더 허용
                 .allowCredentials(true) // 쿠키/인증 정보 허용
@@ -36,10 +36,16 @@ public class WebConfig implements WebMvcConfigurer {
     /**
      * 정적 리소스 핸들러 설정
      * - 업로드된 이미지를 정적 리소스로 제공
+     * - EC2 환경에서는 절대 경로 사용 (예: /opt/gacha/uploads/memories)
      */
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
+        // 업로드 디렉토리의 상위 디렉토리를 사용
+        String uploadLocation = uploadDir.endsWith("/")
+                ? "file:" + uploadDir.substring(0, uploadDir.lastIndexOf('/', uploadDir.length() - 2) + 1)
+                : "file:" + uploadDir.substring(0, uploadDir.lastIndexOf('/') + 1);
+
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:uploads/");
+                .addResourceLocations(uploadLocation);
     }
 }
